@@ -1,20 +1,7 @@
-import { GraphQLServer } from "graphql-yoga";
-import { altairExpress } from "altair-express-middleware";
-import cors from "cors";
-// ... or using `require()`
-// const { GraphQLServer } = require('graphql-yoga')
-
-const typeDefs = `
-  type Query {
-    hello(name: String): String!
-  }
-`;
-
-const resolvers = {
-  Query: {
-    hello: (_, { name }) => `Hello ${name || "World"}`
-  }
-};
+import {GraphQLServer} from "graphql-yoga";
+import {altairExpress} from "altair-express-middleware";
+import * as admin from "firebase-admin";
+import Query from "./resolvers/Query";
 
 const opts = {
   port: 4000,
@@ -24,7 +11,12 @@ const opts = {
   }
 };
 
-const server = new GraphQLServer({ typeDefs, resolvers });
+const server = new GraphQLServer({
+  typeDefs: "./schema.graphql",
+  resolvers: {
+    Query
+  }
+});
 //server.express.use(cors());
 server.express.use(
   "/altair",
