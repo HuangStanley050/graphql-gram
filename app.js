@@ -1,7 +1,8 @@
-import {GraphQLServer} from "graphql-yoga";
-import {altairExpress} from "altair-express-middleware";
+import { GraphQLServer } from "graphql-yoga";
+import { altairExpress } from "altair-express-middleware";
 import * as admin from "firebase-admin";
 import Query from "./resolvers/Query";
+import Mutation from "./resolvers/Mutation";
 
 const opts = {
   port: 4000,
@@ -14,7 +15,8 @@ const opts = {
 const server = new GraphQLServer({
   typeDefs: "./schema.graphql",
   resolvers: {
-    Query
+    Query,
+    Mutation
   }
 });
 //server.express.use(cors());
