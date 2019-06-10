@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "altair-express-middleware": "^2.1.9",
+    "cors": "^2.8.5",
     "graphql-yoga": "^1.17.4",
     "nodemon": "^1.19.1"
   },
