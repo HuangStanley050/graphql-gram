@@ -15,16 +15,19 @@
 //https://github.com/apollographql/apollo-server/issues/2105
 //===========================================//
 import {createWriteStream} from "fs";
+//import { Storage } from "@google-cloud/storage";
+
 const uploadDir = "./uploads";
 
 const storeUpload = async ({createReadStream, filename}, bucket) => {
   const id = "testID";
   const path = `${uploadDir}/${id}-${filename}`;
   const stream = createReadStream();
+  const file = bucket.file("my-file");
 
   return new Promise((resolve, reject) =>
     stream
-      .pipe(createWriteStream(path))
+      .pipe(file.createWriteStream())
       .on("finish", () => resolve({id, path}))
       .on("error", reject)
   );
