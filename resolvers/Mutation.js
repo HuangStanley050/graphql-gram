@@ -17,10 +17,11 @@
 import {createWriteStream} from "fs";
 const uploadDir = "./uploads";
 
-const storeUpload = async ({createReadStream, filename}) => {
+const storeUpload = async ({createReadStream, filename}, bucket) => {
   const id = "testID";
   const path = `${uploadDir}/${id}-${filename}`;
   const stream = createReadStream();
+
   return new Promise((resolve, reject) =>
     stream
       .pipe(createWriteStream(path))
@@ -29,16 +30,15 @@ const storeUpload = async ({createReadStream, filename}) => {
   );
 };
 
-const processUpload = async upload => {
+const processUpload = async (upload, bucket) => {
   const {createReadStream, filename, mimetype, encoding} = await upload;
-  const {id, path} = await storeUpload({createReadStream, filename});
+  const {id, path} = await storeUpload({createReadStream, filename}, bucket);
   return path;
 };
 
 const mutation = {
-  singleUpload: (obj, {file}) => {
-    console.log("running");
-    processUpload(file);
+  singleUpload: (obj, {file}, {bucket}, info) => {
+    processUpload(file, bucket);
   }
   //multipleUpload: (obj, { files }) => Promise.all(files.map(processUpload))
 };
