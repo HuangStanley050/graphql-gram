@@ -14,12 +14,14 @@
 /*============ the weird issue of stream being deprecated from nodejs =================*/
 //https://github.com/apollographql/apollo-server/issues/2105
 //===========================================//
-import {createWriteStream} from "fs";
-//import { Storage } from "@google-cloud/storage";
+import { createWriteStream } from "fs";
+import User from "../models/user";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const uploadDir = "./uploads";
 
-const storeUpload = async ({createReadStream, filename}, bucket) => {
+const storeUpload = async ({ createReadStream, filename }, bucket) => {
   const id = "testID";
   const path = `${uploadDir}/${id}-${filename}`;
   const stream = createReadStream();
@@ -28,20 +30,49 @@ const storeUpload = async ({createReadStream, filename}, bucket) => {
   return new Promise((resolve, reject) =>
     stream
       .pipe(file.createWriteStream())
-      .on("finish", () => resolve({id, path}))
+      .on("finish", () => resolve({ id, path }))
       .on("error", reject)
   );
 };
 
 const processUpload = async (upload, bucket) => {
-  const {createReadStream, filename, mimetype, encoding} = await upload;
-  const {id, path} = await storeUpload({createReadStream, filename}, bucket);
+  const { createReadStream, filename, mimetype, encoding } = await upload;
+  const { id, path } = await storeUpload(
+    { createReadStream, filename },
+    bucket
+  );
   return path;
 };
 
 const mutation = {
-  singleUpload: (obj, {file}, {bucket}, info) => {
+  singleUpload: (obj, { file }, { bucket }, info) => {
     processUpload(file, bucket);
+  },
+  createUser: async (parent, args, ctx, info) => {
+    try {
+      let user = await User.findOne({ email: args.data.email });
+      if (user) {
+        throw new Error("User already exists!!");
+        return false;
+      }
+      let hashPassword = await bcrypt.hash(args.data.password, 12);
+
+      const newUser = new User({
+        email: args.data.email,
+        name: args.data.name,
+        password: hashPassword
+      });
+
+      let result = await newUser.save();
+      if (result) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (err) {
+      console.log(err);
+      throw new Error("Something went wrong");
+    }
   }
   //multipleUpload: (obj, { files }) => Promise.all(files.map(processUpload))
 };

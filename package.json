@@ -12,8 +12,11 @@
   "license": "ISC",
   "dependencies": {
     "altair-express-middleware": "^2.1.9",
+    "bcryptjs": "^2.4.3",
     "firebase-admin": "^8.0.0",
     "graphql-yoga": "^1.17.4",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.5.14",
     "nodemon": "^1.19.1"
   },
   "devDependencies": {
