@@ -48,6 +48,29 @@ const mutation = {
   singleUpload: (obj, { file }, { bucket }, info) => {
     processUpload(file, bucket);
   },
+  login: async (parent, args, ctx, info) => {
+    const user = await User.findOne({ email: args.data.email });
+    if (!user) {
+      throw new Error("User Doesn't exits");
+    }
+    const isEqual = await bcrypt.compare(args.data.password, user.password);
+
+    if (!isEqual) {
+      throw new Error("Incorrect password");
+    }
+    console.log(process.env.SECRET);
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.SECRET,
+      { expiresIn: "1h" }
+    );
+    console.log(token);
+    return {
+      userId: user.id,
+      token: token,
+      tokenExpiration: 1
+    };
+  },
   createUser: async (parent, args, ctx, info) => {
     try {
       let user = await User.findOne({ email: args.data.email });
@@ -74,7 +97,6 @@ const mutation = {
       throw new Error("Something went wrong");
     }
   }
-  //multipleUpload: (obj, { files }) => Promise.all(files.map(processUpload))
 };
 
 export default mutation;

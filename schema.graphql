@@ -9,6 +9,7 @@ type Mutation {
   singleUpload(file: Upload!): File
   multipleUpload(files: [Upload!]!): [File!]!
   createUser(data: userCreate): Boolean!
+  login(data: userLogin): AuthData!
 }
 
 type File {
@@ -26,6 +27,17 @@ type User {
   password: String!
   posts: [String]
   comments: [String]
+}
+
+type AuthData {
+  userId: ID!
+  token: String!
+  tokenExpiration: Int!
+}
+
+input userLogin {
+  email: String!
+  password: String!
 }
 
 input userCreate {
