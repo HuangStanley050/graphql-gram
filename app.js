@@ -31,7 +31,7 @@ const server = new GraphQLServer({
     Query,
     Mutation
   },
-  context: {bucket}
+  context: req => ({...req, bucket})
 });
 
 server.express.use(

@@ -14,14 +14,14 @@
 /*============ the weird issue of stream being deprecated from nodejs =================*/
 //https://github.com/apollographql/apollo-server/issues/2105
 //===========================================//
-import { createWriteStream } from "fs";
+import {createWriteStream} from "fs";
 import User from "../models/user";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 const uploadDir = "./uploads";
 
-const storeUpload = async ({ createReadStream, filename }, bucket) => {
+const storeUpload = async ({createReadStream, filename}, bucket) => {
   const id = "testID";
   const path = `${uploadDir}/${id}-${filename}`;
   const stream = createReadStream();
@@ -30,50 +30,53 @@ const storeUpload = async ({ createReadStream, filename }, bucket) => {
   return new Promise((resolve, reject) =>
     stream
       .pipe(file.createWriteStream())
-      .on("finish", () => resolve({ id, path }))
+      .on("finish", () => resolve({id, path}))
       .on("error", reject)
   );
 };
 
 const processUpload = async (upload, bucket) => {
-  const { createReadStream, filename, mimetype, encoding } = await upload;
-  const { id, path } = await storeUpload(
-    { createReadStream, filename },
-    bucket
-  );
+  const {createReadStream, filename, mimetype, encoding} = await upload;
+  const {id, path} = await storeUpload({createReadStream, filename}, bucket);
   return path;
 };
 
 const mutation = {
-  singleUpload: (obj, { file }, { bucket }, info) => {
+  singleUpload: (obj, {file}, {bucket}, info) => {
     processUpload(file, bucket);
   },
   login: async (parent, args, ctx, info) => {
-    const user = await User.findOne({ email: args.data.email });
-    if (!user) {
-      throw new Error("User Doesn't exits");
-    }
-    const isEqual = await bcrypt.compare(args.data.password, user.password);
+    console.log(ctx.request.headers);
+    try {
+      const user = await User.findOne({email: args.data.email});
+      if (!user) {
+        throw new Error("User Doesn't exits");
+      }
+      const isEqual = await bcrypt.compare(args.data.password, user.password);
 
-    if (!isEqual) {
-      throw new Error("Incorrect password");
+      if (!isEqual) {
+        throw new Error("Incorrect password");
+      }
+
+      const token = jwt.sign(
+        {userId: user.id, email: user.email},
+        process.env.SECRET,
+        {expiresIn: "1h"}
+      );
+
+      return {
+        userId: user.id,
+        token: token,
+        tokenExpiration: 1
+      };
+    } catch (err) {
+      console.log(err);
+      throw new Error("Something went wrong");
     }
-    console.log(process.env.SECRET);
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.SECRET,
-      { expiresIn: "1h" }
-    );
-    console.log(token);
-    return {
-      userId: user.id,
-      token: token,
-      tokenExpiration: 1
-    };
   },
   createUser: async (parent, args, ctx, info) => {
     try {
-      let user = await User.findOne({ email: args.data.email });
+      let user = await User.findOne({email: args.data.email});
       if (user) {
         throw new Error("User already exists!!");
         return false;
@@ -87,11 +90,7 @@ const mutation = {
       });
 
       let result = await newUser.save();
-      if (result) {
-        return true;
-      } else {
-        return false;
-      }
+      return result;
     } catch (err) {
       console.log(err);
       throw new Error("Something went wrong");

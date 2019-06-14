@@ -8,7 +8,7 @@ type Query {
 type Mutation {
   singleUpload(file: Upload!): File
   multipleUpload(files: [Upload!]!): [File!]!
-  createUser(data: userCreate): Boolean!
+  createUser(data: userCreate): User!
   login(data: userLogin): AuthData!
 }
 
@@ -27,6 +27,13 @@ type User {
   password: String!
   posts: [String]
   comments: [String]
+}
+
+type Post {
+  id: ID!
+  comments: [String]
+  userId: ID!
+  fileName: String!
 }
 
 type AuthData {

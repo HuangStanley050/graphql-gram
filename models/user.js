@@ -18,7 +18,7 @@ const userSchema = new Schema(
     },
     posts: [
       {
-        type: String,
+        type: Schema.Types.ObjectId,
         ref: "Post"
       }
     ],
@@ -29,7 +29,7 @@ const userSchema = new Schema(
       }
     ]
   },
-  {timestamps: true}
+  { timestamps: true }
 );
 
 export default mongoose.model("User", userSchema);
