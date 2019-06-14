@@ -14,14 +14,15 @@
 /*============ the weird issue of stream being deprecated from nodejs =================*/
 //https://github.com/apollographql/apollo-server/issues/2105
 //===========================================//
-import {createWriteStream} from "fs";
+import { createWriteStream } from "fs";
 import User from "../models/user";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 const uploadDir = "./uploads";
+const secretToken = process.env.SECRET;
 
-const storeUpload = async ({createReadStream, filename}, bucket) => {
+const storeUpload = async ({ createReadStream, filename }, bucket) => {
   const id = "testID";
   const path = `${uploadDir}/${id}-${filename}`;
   const stream = createReadStream();
@@ -30,25 +31,48 @@ const storeUpload = async ({createReadStream, filename}, bucket) => {
   return new Promise((resolve, reject) =>
     stream
       .pipe(file.createWriteStream())
-      .on("finish", () => resolve({id, path}))
+      .on("finish", () => resolve({ id, path }))
       .on("error", reject)
   );
 };
 
 const processUpload = async (upload, bucket) => {
-  const {createReadStream, filename, mimetype, encoding} = await upload;
-  const {id, path} = await storeUpload({createReadStream, filename}, bucket);
+  const { createReadStream, filename, mimetype, encoding } = await upload;
+  const { id, path } = await storeUpload(
+    { createReadStream, filename },
+    bucket
+  );
   return path;
 };
 
+const checkAuth = token => {
+  console.log(token);
+  return;
+};
+
 const mutation = {
-  singleUpload: (obj, {file}, {bucket}, info) => {
-    processUpload(file, bucket);
+  singleUpload: (obj, { file }, { request, bucket }, info) => {
+    if (!request.headers.authorization) {
+      throw new Error("No auth in header");
+    }
+    const token = request.headers.authorization.split(" ")[1];
+    if (!token || token === "") {
+      throw new Error("No token attached!");
+    }
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, secretToken);
+    } catch (error) {
+      throw new Error("token decode failed!!");
+    }
+    console.log(decodedToken);
+    //processUpload(file, bucket);
+    return null;
   },
   login: async (parent, args, ctx, info) => {
     console.log(ctx.request.headers);
     try {
-      const user = await User.findOne({email: args.data.email});
+      const user = await User.findOne({ email: args.data.email });
       if (!user) {
         throw new Error("User Doesn't exits");
       }
@@ -59,9 +83,9 @@ const mutation = {
       }
 
       const token = jwt.sign(
-        {userId: user.id, email: user.email},
+        { userId: user.id, email: user.email },
         process.env.SECRET,
-        {expiresIn: "1h"}
+        { expiresIn: "1h" }
       );
 
       return {
@@ -76,7 +100,7 @@ const mutation = {
   },
   createUser: async (parent, args, ctx, info) => {
     try {
-      let user = await User.findOne({email: args.data.email});
+      let user = await User.findOne({ email: args.data.email });
       if (user) {
         throw new Error("User already exists!!");
         return false;
