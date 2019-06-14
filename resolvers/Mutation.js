@@ -22,52 +22,59 @@ import jwt from "jsonwebtoken";
 const uploadDir = "./uploads";
 const secretToken = process.env.SECRET;
 
-const storeUpload = async ({ createReadStream, filename }, bucket) => {
+const storeUpload = async ({ createReadStream, filename }, bucket, token) => {
   const id = "testID";
   const path = `${uploadDir}/${id}-${filename}`;
   const stream = createReadStream();
-  const file = bucket.file("my-file");
-
+  const file = bucket.file(filename);
+  //console.log(token);
   return new Promise((resolve, reject) =>
     stream
-      .pipe(file.createWriteStream())
+      .pipe(
+        file.createWriteStream({
+          metadata: { metadata: { PoserId: token.userId } }
+        })
+      )
       .on("finish", () => resolve({ id, path }))
       .on("error", reject)
   );
 };
 
-const processUpload = async (upload, bucket) => {
+const processUpload = async (upload, bucket, token) => {
   const { createReadStream, filename, mimetype, encoding } = await upload;
   const { id, path } = await storeUpload(
     { createReadStream, filename },
-    bucket
+    bucket,
+    token
   );
   return path;
 };
 
 const checkAuth = token => {
-  console.log(token);
-  return;
+  if (!token || token === "") {
+    throw new Error("No token attached!");
+  }
+  let decodedToken;
+  try {
+    decodedToken = jwt.verify(token, secretToken);
+  } catch (error) {
+    throw new Error("token decode failed!!");
+  }
+  if (!decodedToken) {
+    throw new Error("Unable to authenticat with token");
+  }
+  return decodedToken;
 };
 
 const mutation = {
   singleUpload: (obj, { file }, { request, bucket }, info) => {
+    let decoded;
     if (!request.headers.authorization) {
       throw new Error("No auth in header");
     }
     const token = request.headers.authorization.split(" ")[1];
-    if (!token || token === "") {
-      throw new Error("No token attached!");
-    }
-    let decodedToken;
-    try {
-      decodedToken = jwt.verify(token, secretToken);
-    } catch (error) {
-      throw new Error("token decode failed!!");
-    }
-    console.log(decodedToken);
-    //processUpload(file, bucket);
-    return null;
+    decoded = checkAuth(token);
+    processUpload(file, bucket, decoded);
   },
   login: async (parent, args, ctx, info) => {
     console.log(ctx.request.headers);
