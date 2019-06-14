@@ -6,7 +6,7 @@ type Query {
 }
 
 type Mutation {
-  singleUpload(file: Upload!): File
+  singleUpload(file: Upload!): File!
   multipleUpload(files: [Upload!]!): [File!]!
   createUser(data: userCreate): User!
   login(data: userLogin): AuthData!
@@ -15,7 +15,7 @@ type Mutation {
 type File {
   id: ID!
   path: String!
-  filename: String!
+  fileName: String!
   mimetype: String!
   encoding: String!
 }

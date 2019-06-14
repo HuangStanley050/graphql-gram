@@ -14,8 +14,9 @@
 /*============ the weird issue of stream being deprecated from nodejs =================*/
 //https://github.com/apollographql/apollo-server/issues/2105
 //===========================================//
-import { createWriteStream } from "fs";
+//import { createWriteStream } from "fs";
 import User from "../models/user";
+import Post from "../models/post";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -27,7 +28,9 @@ const storeUpload = async ({ createReadStream, filename }, bucket, token) => {
   const path = `${uploadDir}/${id}-${filename}`;
   const stream = createReadStream();
   const file = bucket.file(filename);
-  //console.log(token);
+
+  //save post to database before saving to cloud storageBucket
+
   return new Promise((resolve, reject) =>
     stream
       .pipe(
@@ -35,19 +38,31 @@ const storeUpload = async ({ createReadStream, filename }, bucket, token) => {
           metadata: { metadata: { PoserId: token.userId } }
         })
       )
-      .on("finish", () => resolve({ id, path }))
+      .on("finish", () => resolve(filename))
       .on("error", reject)
   );
 };
 
 const processUpload = async (upload, bucket, token) => {
   const { createReadStream, filename, mimetype, encoding } = await upload;
-  const { id, path } = await storeUpload(
+  const result = await storeUpload(
     { createReadStream, filename },
     bucket,
     token
   );
-  return path;
+  const newPost = Post({
+    fileName: result,
+    userId: token.userId
+  });
+  let successfulPost = await newPost.save();
+  //console.log(successfulPost.id, result);
+  return {
+    id: successfulPost.id,
+    fileName: result,
+    path: "test",
+    mimetype,
+    encoding
+  };
 };
 
 const checkAuth = token => {
@@ -74,7 +89,8 @@ const mutation = {
     }
     const token = request.headers.authorization.split(" ")[1];
     decoded = checkAuth(token);
-    processUpload(file, bucket, decoded);
+    let fileResult = processUpload(file, bucket, decoded);
+    return fileResult;
   },
   login: async (parent, args, ctx, info) => {
     console.log(ctx.request.headers);
