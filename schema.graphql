@@ -3,6 +3,7 @@ scalar Upload
 type Query {
   uploads: [File]
   hello: String
+  allposts: [Post]!
 }
 
 type Mutation {

@@ -18,14 +18,14 @@
 import User from "../models/user";
 import Post from "../models/post";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
-const uploadDir = "./uploads";
-const secretToken = process.env.SECRET;
 
-const storeUpload = async ({ createReadStream, filename }, bucket, token) => {
-  const id = "testID";
-  const path = `${uploadDir}/${id}-${filename}`;
+import mongoose from "mongoose";
+import {checkAuth} from "../middlewares/auth";
+const uploadDir = "./uploads";
+
+const storeUpload = async ({createReadStream, filename}, bucket, token) => {
+  // const id = "testID";
+  // const path = `${uploadDir}/${id}-${filename}`;
   const stream = createReadStream();
   const file = bucket.file(filename);
 
@@ -35,7 +35,7 @@ const storeUpload = async ({ createReadStream, filename }, bucket, token) => {
     stream
       .pipe(
         file.createWriteStream({
-          metadata: { metadata: { PoserId: token.userId } }
+          metadata: {metadata: {PoserId: token.userId}}
         })
       )
       .on("finish", () => resolve(filename))
@@ -44,47 +44,40 @@ const storeUpload = async ({ createReadStream, filename }, bucket, token) => {
 };
 
 const processUpload = async (upload, bucket, token) => {
-  const { createReadStream, filename, mimetype, encoding } = await upload;
-  const result = await storeUpload(
-    { createReadStream, filename },
-    bucket,
-    token
-  );
-  const newPost = Post({
-    fileName: result,
-    userId: token.userId
-  });
-  let successfulPost = await newPost.save();
-  let user = await User.findById(mongoose.Types.ObjectId(token.userId));
-  user.posts.push(successfulPost.id);
-  await user.save();
-  return {
-    id: successfulPost.id,
-    fileName: result,
-    path: "test",
-    mimetype,
-    encoding
-  };
-};
-
-const checkAuth = token => {
-  if (!token || token === "") {
-    throw new Error("No token attached!");
-  }
-  let decodedToken;
   try {
-    decodedToken = jwt.verify(token, secretToken);
-  } catch (error) {
-    throw new Error("token decode failed!!");
+    let successfulPost;
+    let user;
+
+    const {createReadStream, filename, mimetype, encoding} = await upload;
+    const result = await storeUpload(
+      {createReadStream, filename},
+      bucket,
+      token
+    );
+    const newPost = Post({
+      fileName: result,
+      userId: token.userId
+    });
+    successfulPost = await newPost.save();
+    user = await User.findById(mongoose.Types.ObjectId(token.userId));
+    user.posts.push(successfulPost.id);
+    await user.save();
+
+    return {
+      id: successfulPost.id,
+      fileName: result,
+      path: "test",
+      mimetype,
+      encoding
+    };
+  } catch (err) {
+    console.log(err);
+    throw new Error("Upload failed");
   }
-  if (!decodedToken) {
-    throw new Error("Unable to authenticat with token");
-  }
-  return decodedToken;
 };
 
 const mutation = {
-  singleUpload: (obj, { file }, { request, bucket }, info) => {
+  singleUpload: (obj, {file}, {request, bucket}, info) => {
     let decoded;
     if (!request.headers.authorization) {
       throw new Error("No auth in header");
@@ -97,7 +90,7 @@ const mutation = {
   login: async (parent, args, ctx, info) => {
     //console.log(ctx.request.headers);
     try {
-      const user = await User.findOne({ email: args.data.email });
+      const user = await User.findOne({email: args.data.email});
       if (!user) {
         throw new Error("User Doesn't exits");
       }
@@ -108,9 +101,9 @@ const mutation = {
       }
 
       const token = jwt.sign(
-        { userId: user.id, email: user.email },
+        {userId: user.id, email: user.email},
         process.env.SECRET,
-        { expiresIn: "1h" }
+        {expiresIn: "1h"}
       );
 
       return {
@@ -125,7 +118,7 @@ const mutation = {
   },
   createUser: async (parent, args, ctx, info) => {
     try {
-      let user = await User.findOne({ email: args.data.email });
+      let user = await User.findOne({email: args.data.email});
       if (user) {
         throw new Error("User already exists!!");
         return false;
