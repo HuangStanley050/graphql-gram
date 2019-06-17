@@ -19,7 +19,7 @@ import User from "../models/user";
 import Post from "../models/post";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
+import mongoose from "mongoose";
 const uploadDir = "./uploads";
 const secretToken = process.env.SECRET;
 
@@ -55,7 +55,9 @@ const processUpload = async (upload, bucket, token) => {
     userId: token.userId
   });
   let successfulPost = await newPost.save();
-  //console.log(successfulPost.id, result);
+  let user = await User.findById(mongoose.Types.ObjectId(token.userId));
+  user.posts.push(successfulPost.id);
+  await user.save();
   return {
     id: successfulPost.id,
     fileName: result,
@@ -93,7 +95,7 @@ const mutation = {
     return fileResult;
   },
   login: async (parent, args, ctx, info) => {
-    console.log(ctx.request.headers);
+    //console.log(ctx.request.headers);
     try {
       const user = await User.findOne({ email: args.data.email });
       if (!user) {
