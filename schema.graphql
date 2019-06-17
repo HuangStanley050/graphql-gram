@@ -4,6 +4,7 @@ type Query {
   uploads: [File]
   hello: String
   allposts: [Post]!
+  singlePost(postId: String!): Post!
 }
 
 type Mutation {
