@@ -1,5 +1,5 @@
-import {GraphQLServer} from "graphql-yoga";
-import {altairExpress} from "altair-express-middleware";
+import { GraphQLServer } from "graphql-yoga";
+import { altairExpress } from "altair-express-middleware";
 import * as admin from "firebase-admin";
 import Query from "./resolvers/Query";
 import Mutation from "./resolvers/Mutation";
@@ -14,7 +14,7 @@ const opts = {
   port: 4000,
   cors: {
     credentials: true,
-    origin: ["*"] // your frontend url.
+    origin: "*" // your frontend url.
   }
 };
 
@@ -31,7 +31,7 @@ const server = new GraphQLServer({
     Query,
     Mutation
   },
-  context: req => ({...req, bucket})
+  context: req => ({ ...req, bucket })
 });
 
 server.express.use(
@@ -42,7 +42,10 @@ server.express.use(
 );
 
 mongoose
-  .connect(connectStr, {useNewUrlParser: true})
+  .connect(
+    connectStr,
+    { useNewUrlParser: true }
+  )
   .then(() => {
     server.start(opts, () =>
       console.log("Server is running on localhost:4000")

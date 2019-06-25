@@ -3,7 +3,7 @@ scalar Upload
 type Query {
   uploads: [File]
   hello: String
-  allposts: [Post]!
+  allposts: [FirebaseData]!
   singlePost(postId: String!): Post!
 }
 
@@ -29,6 +29,11 @@ type User {
   password: String!
   posts: [Post]
   comments: [String]
+}
+
+type FirebaseData {
+  fileName: String!
+  download: String!
 }
 
 type Post {
