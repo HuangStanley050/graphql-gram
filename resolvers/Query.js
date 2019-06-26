@@ -20,24 +20,36 @@ const query = {
   },
   allposts: async (parent, args, {request, bucket}, info) => {
     let decoded;
-    // try to get all files in the storageBucket
-    let [files] = await bucket.getFiles();
-    let downloadUrls = [];
-    downloadUrls = files.map(file => ({
-      fileName: file.name,
-      download: file.metadata.mediaLink
-    }));
-    //console.log(downloadUrls);
 
-    //
     if (!request.headers.authorization) {
       throw new Error("No auth in header");
     }
     const token = request.headers.authorization.split(" ")[1];
     decoded = checkAuth(token);
+
+    const options = {
+      version: "v2", // defaults to 'v2' if missing.
+      action: "read",
+      expires: Date.now() + 1000 * 60 * 60 // one hour
+    };
+    // try to get all files in the storageBucket
+    let [files] = await bucket.getFiles();
+    // let tempUrl = await files[0].getSignedUrl(options);
+    // console.log(tempUrl);
+    let downloadSignedUrls = [];
+
+    downloadSignedUrls = files.map(async file => {
+      let [privateUrl] = await file.getSignedUrl(options);
+      return {
+        fileName: file.name,
+        download: privateUrl
+      };
+    });
+
+    let results = await Promise.all(downloadSignedUrls).then(files => files);
+
     if (decoded) {
-      //let posts = await Post.find({});
-      return downloadUrls;
+      return results;
     } else {
       throw new Error("Not authenticated");
     }
