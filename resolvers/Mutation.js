@@ -28,6 +28,11 @@ const storeUpload = async ({createReadStream, filename}, bucket, token) => {
   // const path = `${uploadDir}/${id}-${filename}`;
   const stream = createReadStream();
   const file = bucket.file(filename);
+  const options = {
+    version: "v2", // defaults to 'v2' if missing.
+    action: "read",
+    expires: Date.now() + 1000 * 60 * 60 // one hour
+  };
 
   //save post to database before saving to cloud storageBucket
 
@@ -38,7 +43,11 @@ const storeUpload = async ({createReadStream, filename}, bucket, token) => {
           metadata: {metadata: {PoserId: token.userId}}
         })
       )
-      .on("finish", () => resolve(filename))
+      .on("finish", async () => {
+        let [url] = await file.getSignedUrl(options);
+        //console.log(url);
+        resolve({filename, url});
+      })
       .on("error", reject)
   );
 };
@@ -49,11 +58,12 @@ const processUpload = async (upload, bucket, token) => {
     let user;
 
     const {createReadStream, filename, mimetype, encoding} = await upload;
-    const result = await storeUpload(
+    const {filename: result, url} = await storeUpload(
       {createReadStream, filename},
       bucket,
       token
     );
+
     const newPost = Post({
       fileName: result,
       userId: token.userId
@@ -66,7 +76,7 @@ const processUpload = async (upload, bucket, token) => {
     return {
       id: successfulPost.id,
       fileName: result,
-      path: "test",
+      download: url,
       mimetype,
       encoding
     };

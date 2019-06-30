@@ -16,7 +16,8 @@ type Mutation {
 
 type File {
   id: ID!
-  path: String!
+  path: String
+  download: String!
   fileName: String!
   mimetype: String!
   encoding: String!
