@@ -44,6 +44,7 @@ const storeUpload = async ({createReadStream, filename}, bucket, token) => {
         })
       )
       .on("finish", async () => {
+        //get the download url and then send it back as a respone
         let [url] = await file.getSignedUrl(options);
         //console.log(url);
         resolve({filename, url});
@@ -58,6 +59,7 @@ const processUpload = async (upload, bucket, token) => {
     let user;
 
     const {createReadStream, filename, mimetype, encoding} = await upload;
+
     const {filename: result, url} = await storeUpload(
       {createReadStream, filename},
       bucket,

@@ -33,6 +33,7 @@ type User {
 }
 
 type FirebaseData {
+  postId: ID!
   fileName: String!
   download: String!
 }

@@ -34,13 +34,21 @@ const query = {
     };
     // try to get all files in the storageBucket
     let [files] = await bucket.getFiles();
-    // let tempUrl = await files[0].getSignedUrl(options);
-    // console.log(tempUrl);
+
     let downloadSignedUrls = [];
 
     downloadSignedUrls = files.map(async file => {
       let [privateUrl] = await file.getSignedUrl(options);
+      let mongoId = await Post.findOne({fileName: file.name});
+      //console.log(mongoId);
+      // const test = {
+      //   postId: mongoId.id,
+      //   fileName: file.name,
+      //   download: privateUrl
+      // };
+      // console.log(test);
       return {
+        postId: mongoId.id,
         fileName: file.name,
         download: privateUrl
       };
