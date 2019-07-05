@@ -17,6 +17,7 @@
 //import { createWriteStream } from "fs";
 import User from "../models/user";
 import Post from "../models/post";
+import Comment from "../models/comment";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -89,7 +90,35 @@ const processUpload = async (upload, bucket, token) => {
 };
 
 const mutation = {
-  createComment: async (parent, args, ctx, info) => {},
+  createComment: async (parent, args, {request}, info) => {
+    let decoded;
+    const postId = args.data.postId;
+    const comment = args.data.comment;
+    const userId = args.data.userId;
+
+    if (!request.headers.authorization) {
+      throw new Error("No auth in headers");
+    }
+    const token = request.headers.authorization.split(" ")[1];
+
+    decoded = checkAuth(token);
+    //console.log(postId, userId, comment);
+    if (decoded) {
+      let newComment = new Comment({
+        userId,
+        postId,
+        comment
+      });
+      let post = await Post.findById(postId);
+      let user = await User.findById(userId);
+      let result = await newComment.save();
+      post.comments.push(result.id);
+      user.comments.push(result.id);
+      await post.save();
+      await user.save();
+      return result;
+    }
+  },
   singleUpload: (obj, {file}, {request, bucket}, info) => {
     let decoded;
     if (!request.headers.authorization) {

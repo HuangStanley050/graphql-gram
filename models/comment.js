@@ -8,7 +8,7 @@ const commentSchema = Schema(
       ref: "User"
     },
     postId: {
-      type: Schema.Types.objectId,
+      type: Schema.Types.ObjectId,
       ref: "Post"
     },
     comment: {
@@ -16,7 +16,7 @@ const commentSchema = Schema(
       required: true
     }
   },
-  {timestamps: true}
+  { timestamps: true }
 );
 
 export default mongoose.model("Comment", commentSchema);

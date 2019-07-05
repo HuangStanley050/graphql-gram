@@ -42,7 +42,7 @@ type FirebaseData {
 type Comment {
   id: ID!
   userId: ID!
-  postID: ID!
+  postId: ID!
   comment: String!
 }
 
