@@ -12,6 +12,7 @@ type Mutation {
   multipleUpload(files: [Upload!]!): [File!]!
   createUser(data: userCreate): User!
   login(data: userLogin): AuthData!
+  createComment(data: commentCreate): Comment!
 }
 
 type File {
@@ -38,6 +39,13 @@ type FirebaseData {
   download: String!
 }
 
+type Comment {
+  id: ID!
+  userId: ID!
+  postID: ID!
+  comment: String!
+}
+
 type Post {
   id: ID!
   comments: [String]
@@ -60,4 +68,10 @@ input userCreate {
   email: String!
   name: String!
   password: String!
+}
+
+input commentCreate {
+  postId: ID!
+  comment: String!
+  userId: ID!
 }

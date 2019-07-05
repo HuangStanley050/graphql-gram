@@ -40,13 +40,7 @@ const query = {
     downloadSignedUrls = files.map(async file => {
       let [privateUrl] = await file.getSignedUrl(options);
       let mongoId = await Post.findOne({fileName: file.name});
-      //console.log(mongoId);
-      // const test = {
-      //   postId: mongoId.id,
-      //   fileName: file.name,
-      //   download: privateUrl
-      // };
-      // console.log(test);
+
       return {
         postId: mongoId.id,
         fileName: file.name,

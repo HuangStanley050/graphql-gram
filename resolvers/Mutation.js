@@ -89,6 +89,7 @@ const processUpload = async (upload, bucket, token) => {
 };
 
 const mutation = {
+  createComment: async (parent, args, ctx, info) => {},
   singleUpload: (obj, {file}, {request, bucket}, info) => {
     let decoded;
     if (!request.headers.authorization) {
