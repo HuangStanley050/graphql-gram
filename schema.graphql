@@ -5,6 +5,7 @@ type Query {
   hello: String
   allposts: [FirebaseData]!
   singlePost(postId: String!): Post!
+  comments(postId: ID!): [Comment]!
 }
 
 type Mutation {

@@ -1,9 +1,36 @@
 import Post from "../models/post";
+import Comment from "../models/comment";
+import mongoose from "mongoose";
 import {checkAuth} from "../middlewares/auth";
 
 const query = {
   hello: (parent, args, ctx, info) => {
     return "hello";
+  },
+  comments: async (parent, args, {request}, info) => {
+    let decoded;
+    let postId = args.postId;
+    let comments = [];
+    if (!request.headers.authorization) {
+      throw new Error("No auth in header");
+    }
+    const token = request.headers.authorization.split(" ")[1];
+    decoded = checkAuth(token);
+    if (decoded) {
+      let post = await Post.findById(postId);
+
+      post.comments.forEach(id => {
+        let comment = Comment.findById(mongoose.Types.ObjectId(id));
+
+        comments.push(comment);
+      });
+
+      let finalResult = await Promise.all(comments);
+      //console.log(finalResult);
+      return finalResult;
+    } else {
+      throw new Error("Token is not valid");
+    }
   },
   singlePost: async (parent, args, {request}, info) => {
     let decoded;
