@@ -17,17 +17,22 @@ const query = {
     token = getToken(request.headers.authorization);
     decoded = checkAuth(token);
     if (decoded) {
-      let post = await Post.findById(postId);
+      try {
+        let post = await Post.findById(postId);
 
-      post.comments.forEach(id => {
-        let comment = Comment.findById(mongoose.Types.ObjectId(id));
+        post.comments.forEach(id => {
+          let comment = Comment.findById(mongoose.Types.ObjectId(id));
 
-        comments.push(comment);
-      });
+          comments.push(comment);
+        });
 
-      let finalResult = await Promise.all(comments);
-      //console.log(finalResult);
-      return finalResult;
+        let finalResult = await Promise.all(comments);
+        //console.log(finalResult);
+        return finalResult;
+      } catch (err) {
+        console.log(err);
+        throw new Error("Unable to get comments");
+      }
     } else {
       throw new Error("Token is not valid");
     }
@@ -50,6 +55,7 @@ const query = {
   allposts: async (parent, args, {request, bucket}, info) => {
     let token;
     let decoded;
+    let results;
     token = getToken(request.headers.authorization);
     decoded = checkAuth(token);
 
@@ -59,22 +65,28 @@ const query = {
       expires: Date.now() + 1000 * 60 * 60 // one hour
     };
     // try to get all files in the storageBucket
-    let [files] = await bucket.getFiles();
 
-    let downloadSignedUrls = [];
+    try {
+      let [files] = await bucket.getFiles();
 
-    downloadSignedUrls = files.map(async file => {
-      let [privateUrl] = await file.getSignedUrl(options);
-      let mongoId = await Post.findOne({fileName: file.name});
+      let downloadSignedUrls = [];
 
-      return {
-        postId: mongoId.id,
-        fileName: file.name,
-        download: privateUrl
-      };
-    });
+      downloadSignedUrls = files.map(async file => {
+        let [privateUrl] = await file.getSignedUrl(options);
+        let mongoId = await Post.findOne({fileName: file.name});
 
-    let results = await Promise.all(downloadSignedUrls).then(files => files);
+        return {
+          postId: mongoId.id,
+          fileName: file.name,
+          download: privateUrl
+        };
+      });
+
+      results = await Promise.all(downloadSignedUrls).then(files => files);
+    } catch (err) {
+      console.log(err);
+      throw new Error("Unable to fetch posts");
+    }
 
     if (decoded) {
       return results;
