@@ -103,19 +103,24 @@ const mutation = {
     decoded = checkAuth(token);
     //console.log(postId, userId, comment);
     if (decoded) {
-      let newComment = new Comment({
-        userId,
-        postId,
-        comment
-      });
-      let post = await Post.findById(postId);
-      let user = await User.findById(userId);
-      let result = await newComment.save();
-      post.comments.push(result.id);
-      user.comments.push(result.id);
-      await post.save();
-      await user.save();
-      return result;
+      try {
+        let newComment = new Comment({
+          userId,
+          postId,
+          comment
+        });
+        let post = await Post.findById(postId);
+        let user = await User.findById(userId);
+        let result = await newComment.save();
+        post.comments.push(result.id);
+        user.comments.push(result.id);
+        await post.save();
+        await user.save();
+        return result;
+      } catch (err) {
+        console.log(err);
+        throw new Error("Unable to add comment to post");
+      }
     }
   },
   singleUpload: (obj, {file}, {request, bucket}, info) => {
