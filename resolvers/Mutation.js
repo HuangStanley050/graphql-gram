@@ -22,6 +22,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import {checkAuth} from "../middlewares/auth";
+import {getToken} from "../middlewares/getToken";
 const uploadDir = "./uploads";
 
 const storeUpload = async ({createReadStream, filename}, bucket, token) => {
@@ -92,14 +93,12 @@ const processUpload = async (upload, bucket, token) => {
 const mutation = {
   createComment: async (parent, args, {request}, info) => {
     let decoded;
+    let token;
     const postId = args.data.postId;
     const comment = args.data.comment;
     const userId = args.data.userId;
 
-    if (!request.headers.authorization) {
-      throw new Error("No auth in headers");
-    }
-    const token = request.headers.authorization.split(" ")[1];
+    token = getToken(request.headers.authorization);
 
     decoded = checkAuth(token);
     //console.log(postId, userId, comment);

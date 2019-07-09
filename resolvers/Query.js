@@ -2,6 +2,7 @@ import Post from "../models/post";
 import Comment from "../models/comment";
 import mongoose from "mongoose";
 import {checkAuth} from "../middlewares/auth";
+import {getToken} from "../middlewares/getToken";
 
 const query = {
   hello: (parent, args, ctx, info) => {
@@ -10,11 +11,10 @@ const query = {
   comments: async (parent, args, {request}, info) => {
     let decoded;
     let postId = args.postId;
+    let token;
     let comments = [];
-    if (!request.headers.authorization) {
-      throw new Error("No auth in header");
-    }
-    const token = request.headers.authorization.split(" ")[1];
+
+    token = getToken(request.headers.authorization);
     decoded = checkAuth(token);
     if (decoded) {
       let post = await Post.findById(postId);
@@ -35,10 +35,12 @@ const query = {
   singlePost: async (parent, args, {request}, info) => {
     let decoded;
     let postId = args.postId;
-    if (!request.headers.authorization) {
-      throw new Error("No auth in header");
-    }
-    const token = request.headers.authorization.split(" ")[1];
+    let token;
+    token = getToken(request.headers.authorization);
+    // if (!request.headers.authorization) {
+    //   throw new Error("No auth in header");
+    // }
+    // const token = request.headers.authorization.split(" ")[1];
     decoded = checkAuth(token);
     if (decoded) {
       let post = await Post.findById(postId);
@@ -46,12 +48,9 @@ const query = {
     }
   },
   allposts: async (parent, args, {request, bucket}, info) => {
+    let token;
     let decoded;
-
-    if (!request.headers.authorization) {
-      throw new Error("No auth in header");
-    }
-    const token = request.headers.authorization.split(" ")[1];
+    token = getToken(request.headers.authorization);
     decoded = checkAuth(token);
 
     const options = {
