@@ -146,15 +146,14 @@ const mutation = {
       }
 
       const token = jwt.sign(
-        {userId: user.id, email: user.email},
+        {userId: user.id, email: user.email, name: user.name},
         process.env.SECRET,
         {expiresIn: "1h"}
       );
 
       return {
         userId: user.id,
-        token: token,
-        tokenExpiration: 1
+        token: token
       };
     } catch (err) {
       console.log(err);
