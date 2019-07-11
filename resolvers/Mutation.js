@@ -107,9 +107,9 @@ const mutation = {
         let post = await Post.findById(postId);
         let user = await User.findById(userId);
         let newComment = new Comment({
-          userId,
-          postId,
-          comment,
+          userId: userId,
+          postId: postId,
+          comment: comment,
           userName: user.name
         });
 
