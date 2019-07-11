@@ -45,6 +45,7 @@ type Comment {
   userId: ID!
   postId: ID!
   comment: String!
+  userName: String!
 }
 
 type Post {

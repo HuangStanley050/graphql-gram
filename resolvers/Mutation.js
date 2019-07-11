@@ -104,13 +104,15 @@ const mutation = {
     //console.log(postId, userId, comment);
     if (decoded) {
       try {
+        let post = await Post.findById(postId);
+        let user = await User.findById(userId);
         let newComment = new Comment({
           userId,
           postId,
-          comment
+          comment,
+          userName: user.name
         });
-        let post = await Post.findById(postId);
-        let user = await User.findById(userId);
+
         let result = await newComment.save();
         post.comments.push(result.id);
         user.comments.push(result.id);
