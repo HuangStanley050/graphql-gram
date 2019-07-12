@@ -14,6 +14,7 @@ type Mutation {
   createUser(data: userCreate): User!
   login(data: userLogin): AuthData!
   createComment(data: commentCreate): Comment!
+  deleteComment(data: commentDelete): Comment!
 }
 
 type File {
@@ -76,4 +77,8 @@ input commentCreate {
   postId: ID!
   comment: String!
   userId: ID!
+}
+
+input commentDelete {
+  commentId: ID!
 }

@@ -91,6 +91,7 @@ const processUpload = async (upload, bucket, token) => {
 };
 
 const mutation = {
+  deleteComment: async (parent, args, {requst}, info) => {},
   createComment: async (parent, args, {request}, info) => {
     let decoded;
     let token;
