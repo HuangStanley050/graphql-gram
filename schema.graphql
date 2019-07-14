@@ -59,7 +59,6 @@ type Post {
 type AuthData {
   userId: ID!
   token: String!
-  tokenExpiration: Int!
 }
 
 input userLogin {
