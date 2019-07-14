@@ -21,11 +21,11 @@ import Comment from "../models/comment";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-import { checkAuth } from "../middlewares/auth";
-import { getToken } from "../middlewares/getToken";
+import {checkAuth} from "../middlewares/auth";
+import {getToken} from "../middlewares/getToken";
 const uploadDir = "./uploads";
 
-const storeUpload = async ({ createReadStream, filename }, bucket, token) => {
+const storeUpload = async ({createReadStream, filename}, bucket, token) => {
   // const id = "testID";
   // const path = `${uploadDir}/${id}-${filename}`;
   const stream = createReadStream();
@@ -42,14 +42,14 @@ const storeUpload = async ({ createReadStream, filename }, bucket, token) => {
     stream
       .pipe(
         file.createWriteStream({
-          metadata: { metadata: { PoserId: token.userId } }
+          metadata: {metadata: {PoserId: token.userId}}
         })
       )
       .on("finish", async () => {
         //get the download url and then send it back as a respone
         let [url] = await file.getSignedUrl(options);
         //console.log(url);
-        resolve({ filename, url });
+        resolve({filename, url});
       })
       .on("error", reject)
   );
@@ -60,10 +60,10 @@ const processUpload = async (upload, bucket, token) => {
     let successfulPost;
     let user;
 
-    const { createReadStream, filename, mimetype, encoding } = await upload;
+    const {createReadStream, filename, mimetype, encoding} = await upload;
 
-    const { filename: result, url } = await storeUpload(
-      { createReadStream, filename },
+    const {filename: result, url} = await storeUpload(
+      {createReadStream, filename},
       bucket,
       token
     );
@@ -91,13 +91,7 @@ const processUpload = async (upload, bucket, token) => {
 };
 
 const mutation = {
-  deleteComment: async (parent, args, { request }, info) => {
-    //get comment
-    //get post
-    //get user id
-    //clear the comment in the comment arrray in Post collection
-    //cearl the comment in the comment array in User collection
-    //clear the comment in comment collection
+  deleteComment: async (parent, args, {request}, info) => {
     let decoded;
     let token;
     let postId;
@@ -106,35 +100,39 @@ const mutation = {
     token = getToken(request.headers.authorization);
     decoded = checkAuth(token);
     if (decoded) {
-      let comment;
-      let post;
-      let user;
-      let userId;
-      let postId;
-      //console.log(commentId, userId, postId);
-      comment = await Comment.findById(commentId);
-      userId = comment.userId;
-      postId = comment.postId;
-      post = await Post.findById(postId);
-      user = await User.findById(userId);
-      //console.log(user, post, comment);
-      await Comment.deleteOne({ _id: commentId });
-      let userComments = user.comments.filter(
-        comment => comment !== commentId.toString()
-      );
-      let postComments = post.comments.filter(
-        comment => comment !== commentId.toString()
-      );
-      user.comments = userComments;
-      post.comments = postComments;
-      await post.save();
-      await user.save();
-      console.log("all done");
+      try {
+        let comment;
+        let post;
+        let user;
+        let userId;
+        let postId;
+
+        comment = await Comment.findById(commentId);
+        userId = comment.userId;
+        postId = comment.postId;
+        post = await Post.findById(postId);
+        user = await User.findById(userId);
+
+        await Comment.deleteOne({_id: commentId});
+        let userComments = user.comments.filter(
+          comment => comment !== commentId.toString()
+        );
+        let postComments = post.comments.filter(
+          comment => comment !== commentId.toString()
+        );
+        user.comments = userComments;
+        post.comments = postComments;
+        await post.save();
+        await user.save();
+        return comment;
+      } catch (err) {
+        throw new Error("Unable to delete comment");
+      }
     } else {
       throw new Error("Token is not valid");
     }
   },
-  createComment: async (parent, args, { request }, info) => {
+  createComment: async (parent, args, {request}, info) => {
     let decoded;
     let token;
     const postId = args.data.postId;
@@ -168,7 +166,7 @@ const mutation = {
       }
     }
   },
-  singleUpload: (obj, { file }, { request, bucket }, info) => {
+  singleUpload: (obj, {file}, {request, bucket}, info) => {
     let decoded;
     if (!request.headers.authorization) {
       throw new Error("No auth in header");
@@ -180,7 +178,7 @@ const mutation = {
   },
   login: async (parent, args, ctx, info) => {
     try {
-      const user = await User.findOne({ email: args.data.email });
+      const user = await User.findOne({email: args.data.email});
       if (!user) {
         throw new Error("User Doesn't exits");
       }
@@ -191,9 +189,9 @@ const mutation = {
       }
 
       const token = jwt.sign(
-        { userId: user.id, email: user.email, name: user.name },
+        {userId: user.id, email: user.email, name: user.name},
         process.env.SECRET,
-        { expiresIn: "1h" }
+        {expiresIn: "1h"}
       );
 
       return {
@@ -207,7 +205,7 @@ const mutation = {
   },
   createUser: async (parent, args, ctx, info) => {
     try {
-      let user = await User.findOne({ email: args.data.email });
+      let user = await User.findOne({email: args.data.email});
       if (user) {
         throw new Error("User already exists!!");
         return false;
