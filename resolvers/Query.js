@@ -16,6 +16,11 @@ const query = {
     //3. get corresponidng information from mongodb
     //4. return the response back to client
     //5. need to figure out what to do when we reach the end of the Post
+    //if there are 9 posts and then client send page 8 request that means it's no more as 8+1 = 9 total posts
+    //send page 0 request then fetch the first item in post[0] so on so forth, last item is post[8]
+
+    //client will keep a current page and total page counter, once current page is one less than total page that means
+    //all posts have been downloaded
     let token;
     let decoded;
     let results;
@@ -32,10 +37,15 @@ const query = {
       action: "read",
       expires: Date.now() + 1000 * 60 * 60 // one hour
     };
+
     let [files] = await bucket.getFiles();
+    totalPages = files.length;
+    if (page >= totalPages) {
+      throw new Error("No more posts left!!");
+    }
     file = files[page];
     fileName = files[page].name;
-    totalPages = files.length;
+
     let [privateUrl] = await file.getSignedUrl(options);
     postId = await Post.findOne({fileName});
     return {
@@ -44,10 +54,6 @@ const query = {
       download: privateUrl,
       totalPages
     };
-    //console.log(fileName, postId.id);
-    //console.log(files[page].name);
-    // console.log(files.length);
-    // console.log(args.data.page);
   },
   comments: async (parent, args, {request}, info) => {
     let decoded;
