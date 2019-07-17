@@ -8,6 +8,47 @@ const query = {
   hello: (parent, args, ctx, info) => {
     return "hello";
   },
+  infinity: async (parent, args, {request, bucket}, info) => {
+    //trying to implement infinity scroll when fetching data from client
+    //will fetch one post at a time
+    //1. Need to find out how many posts there in the database
+    //2. Use the page number suppllied by client to fetch the time from google storageBucke
+    //3. get corresponidng information from mongodb
+    //4. return the response back to client
+    //5. need to figure out what to do when we reach the end of the Post
+    let token;
+    let decoded;
+    let results;
+    let file;
+    let fileName;
+    let totalPages;
+    let postId;
+    const page = args.data.page;
+    token = getToken(request.headers.authorization);
+    decoded = checkAuth(token);
+
+    const options = {
+      version: "v2", // defaults to 'v2' if missing.
+      action: "read",
+      expires: Date.now() + 1000 * 60 * 60 // one hour
+    };
+    let [files] = await bucket.getFiles();
+    file = files[page];
+    fileName = files[page].name;
+    totalPages = files.length;
+    let [privateUrl] = await file.getSignedUrl(options);
+    postId = await Post.findOne({fileName});
+    return {
+      postId: postId.id,
+      fileName,
+      download: privateUrl,
+      totalPages
+    };
+    //console.log(fileName, postId.id);
+    //console.log(files[page].name);
+    // console.log(files.length);
+    // console.log(args.data.page);
+  },
   comments: async (parent, args, {request}, info) => {
     let decoded;
     let postId = args.postId;

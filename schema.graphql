@@ -6,6 +6,7 @@ type Query {
   allposts: [FirebaseData]!
   singlePost(postId: String!): Post!
   comments(postId: ID!): [Comment]!
+  infinity(data: pageNumber): SingleInfinity!
 }
 
 type Mutation {
@@ -35,6 +36,13 @@ type User {
   comments: [String]
 }
 
+type SingleInfinity {
+  postId: ID!
+  fileName: String!
+  download: String!
+  totalPages: Int!
+}
+
 type FirebaseData {
   postId: ID!
   fileName: String!
@@ -59,6 +67,10 @@ type Post {
 type AuthData {
   userId: ID!
   token: String!
+}
+
+input pageNumber {
+  page: Int!
 }
 
 input userLogin {
