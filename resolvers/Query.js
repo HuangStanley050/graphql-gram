@@ -1,22 +1,49 @@
 import Post from "../models/post";
 import Comment from "../models/comment";
 import mongoose from "mongoose";
-import {checkAuth} from "../middlewares/auth";
-import {getToken} from "../middlewares/getToken";
+import { checkAuth } from "../middlewares/auth";
+import { getToken } from "../middlewares/getToken";
 
 const query = {
   hello: (parent, args, ctx, info) => {
     return "hello";
   },
-  ownFiles: async (parent, args, {request, bucket}, info) => {
+  ownFiles: async (parent, args, { request, bucket }, info) => {
     let token;
     let decoded;
+    let result;
+    let fileName;
+    let howmany = 0;
+    let downloadInfo = [];
+    let poserIds = [];
     const userId = args.data;
-
+    const options = {
+      version: "v2", // defaults to 'v2' if missing.
+      action: "read",
+      expires: Date.now() + 1000 * 60 * 60 // one hour
+    };
     token = getToken(request.headers.authorization);
     decoded = checkAuth(token);
+
+    const [files] = await bucket.getFiles();
+
+    downloadInfo = files.map(async file => {
+      let [fileinfo] = await file.getMetadata();
+
+      let [privateUrl] = await file.getSignedUrl(options);
+      return {
+        download: privateUrl,
+        fileName: file.name,
+        poserId: fileinfo.metadata.PoserId
+      };
+    });
+    result = await Promise.all(downloadInfo);
+    result = result.filter(file => file.poserId === userId);
+    //console.log(result.length);
+    return result;
+    //let links = result.map(file => console.log(file));
   },
-  infinity: async (parent, args, {request, bucket}, info) => {
+  infinity: async (parent, args, { request, bucket }, info) => {
     //trying to implement infinity scroll when fetching data from client
     //will fetch one post at a time
     //1. Need to find out how many posts there in the database
@@ -55,7 +82,7 @@ const query = {
       fileName = files[page].name;
 
       let [privateUrl] = await file.getSignedUrl(options);
-      postId = await Post.findOne({fileName});
+      postId = await Post.findOne({ fileName });
       return {
         postId: postId.id,
         fileName,
@@ -66,7 +93,7 @@ const query = {
       throw new Error("Unable to perform fetching post");
     }
   },
-  comments: async (parent, args, {request}, info) => {
+  comments: async (parent, args, { request }, info) => {
     let decoded;
     let postId = args.postId;
     let token;
@@ -95,7 +122,7 @@ const query = {
       throw new Error("Token is not valid");
     }
   },
-  singlePost: async (parent, args, {request}, info) => {
+  singlePost: async (parent, args, { request }, info) => {
     let decoded;
     let postId = args.postId;
     let token;
@@ -110,7 +137,7 @@ const query = {
       return post;
     }
   },
-  allposts: async (parent, args, {request, bucket}, info) => {
+  allposts: async (parent, args, { request, bucket }, info) => {
     let token;
     let decoded;
     let results;
@@ -131,7 +158,7 @@ const query = {
 
       downloadSignedUrls = files.map(async file => {
         let [privateUrl] = await file.getSignedUrl(options);
-        let mongoId = await Post.findOne({fileName: file.name});
+        let mongoId = await Post.findOne({ fileName: file.name });
 
         return {
           postId: mongoId.id,
