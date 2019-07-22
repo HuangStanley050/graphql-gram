@@ -7,6 +7,7 @@ type Query {
   singlePost(postId: String!): Post!
   comments(postId: ID!): [Comment]!
   infinity(data: pageNumber): SingleInfinity!
+  ownFiles(data: ID!): [UserOwnFiles]!
 }
 
 type Mutation {
@@ -55,6 +56,11 @@ type Comment {
   postId: ID!
   comment: String!
   userName: String!
+}
+
+type UserOwnFiles {
+  fileName: String!
+  download: String!
 }
 
 type Post {

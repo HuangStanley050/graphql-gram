@@ -8,6 +8,14 @@ const query = {
   hello: (parent, args, ctx, info) => {
     return "hello";
   },
+  ownFiles: async (parent, args, {request, bucket}, info) => {
+    let token;
+    let decoded;
+    const userId = args.data;
+
+    token = getToken(request.headers.authorization);
+    decoded = checkAuth(token);
+  },
   infinity: async (parent, args, {request, bucket}, info) => {
     //trying to implement infinity scroll when fetching data from client
     //will fetch one post at a time
@@ -31,29 +39,32 @@ const query = {
     const page = args.data.page;
     token = getToken(request.headers.authorization);
     decoded = checkAuth(token);
-
+    //console.log(page);
     const options = {
       version: "v2", // defaults to 'v2' if missing.
       action: "read",
       expires: Date.now() + 1000 * 60 * 60 // one hour
     };
+    try {
+      let [files] = await bucket.getFiles();
+      totalPages = files.length;
+      if (page >= totalPages) {
+        throw new Error("No more posts left!!");
+      }
+      file = files[page];
+      fileName = files[page].name;
 
-    let [files] = await bucket.getFiles();
-    totalPages = files.length;
-    if (page >= totalPages) {
-      throw new Error("No more posts left!!");
+      let [privateUrl] = await file.getSignedUrl(options);
+      postId = await Post.findOne({fileName});
+      return {
+        postId: postId.id,
+        fileName,
+        download: privateUrl,
+        totalPages
+      };
+    } catch (err) {
+      throw new Error("Unable to perform fetching post");
     }
-    file = files[page];
-    fileName = files[page].name;
-
-    let [privateUrl] = await file.getSignedUrl(options);
-    postId = await Post.findOne({fileName});
-    return {
-      postId: postId.id,
-      fileName,
-      download: privateUrl,
-      totalPages
-    };
   },
   comments: async (parent, args, {request}, info) => {
     let decoded;
